@@ -1,0 +1,238 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>GFR Calculator (Cystatin C Formula)</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <style>
+        .input-highlight {
+            box-shadow: 0 0 0 2px rgba(59, 130, 246, 0.5);
+        }
+        .result-box {
+            transition: all 0.3s ease;
+        }
+        .result-box:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 10px 20px rgba(0, 0, 0, 0.1);
+        }
+        .tooltip:hover .tooltip-text {
+            visibility: visible;
+            opacity: 1;
+        }
+    </style>
+</head>
+<body class="bg-gray-50 min-h-screen">
+    <div class="container mx-auto px-4 py-8 max-w-3xl">
+        <div class="text-center mb-8">
+            <h1 class="text-3xl font-bold text-blue-600 mb-2">GFR Calculator</h1>
+            <p class="text-gray-600">Calculate Glomerular Filtration Rate using Cystatin C formula</p>
+            <div class="w-24 h-1 bg-blue-400 mx-auto mt-4 rounded-full"></div>
+        </div>
+
+        <div class="bg-white rounded-xl shadow-md p-6 mb-8">
+            <div class="flex items-center mb-6">
+                <div class="bg-blue-100 p-3 rounded-full mr-4">
+                    <i class="fas fa-flask text-blue-600 text-xl"></i>
+                </div>
+                <div>
+                    <h2 class="text-xl font-semibold text-gray-800">Patient Information</h2>
+                    <p class="text-gray-500 text-sm">Enter the required details for calculation</p>
+                </div>
+            </div>
+
+            <form id="gfrForm" class="space-y-4">
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                    <div>
+                        <label for="cystatin" class="block text-sm font-medium text-gray-700 mb-1">
+                            Cystatin C (mg/L)
+                            <span class="tooltip relative inline-block ml-1">
+                                <i class="fas fa-info-circle text-blue-400 cursor-pointer"></i>
+                                <span class="tooltip-text absolute z-10 invisible opacity-0 bg-gray-800 text-white text-xs rounded py-1 px-2 -mt-8 -ml-16 w-40 transition-all">
+                                    Normal range: 0.5-1.2 mg/L
+                                </span>
+                            </span>
+                        </label>
+                        <input type="number" id="cystatin" step="0.01" min="0.1" max="10" 
+                               class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500 p-3 border input-highlight"
+                               placeholder="e.g. 1.2" required>
+                    </div>
+
+                    <div>
+                        <label for="age" class="block text-sm font-medium text-gray-700 mb-1">Age (years)</label>
+                        <input type="number" id="age" min="1" max="120" 
+                               class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500 p-3 border input-highlight"
+                               placeholder="e.g. 45" required>
+                    </div>
+
+                    <div>
+                        <label for="sex" class="block text-sm font-medium text-gray-700 mb-1">Sex</label>
+                        <select id="sex" class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500 p-3 border input-highlight">
+                            <option value="male">Male</option>
+                            <option value="female">Female</option>
+                        </select>
+                    </div>
+
+                    <div>
+                        <label for="race" class="block text-sm font-medium text-gray-700 mb-1">Race</label>
+                        <select id="race" class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500 p-3 border input-highlight">
+                            <option value="non-black">Non-Black</option>
+                            <option value="black">Black</option>
+                        </select>
+                    </div>
+                </div>
+
+                <div class="pt-4">
+                    <button type="submit" class="w-full bg-blue-600 hover:bg-blue-700 text-white font-medium py-3 px-4 rounded-md transition duration-300 flex items-center justify-center">
+                        <i class="fas fa-calculator mr-2"></i> Calculate GFR
+                    </button>
+                </div>
+            </form>
+        </div>
+
+        <div id="resultContainer" class="hidden">
+            <div class="bg-white rounded-xl shadow-md overflow-hidden result-box">
+                <div class="bg-gradient-to-r from-blue-500 to-blue-600 p-4 text-white">
+                    <h2 class="text-xl font-semibold flex items-center">
+                        <i class="fas fa-chart-line mr-2"></i> Calculation Results
+                    </h2>
+                </div>
+                <div class="p-6">
+                    <div class="flex justify-between items-center mb-4">
+                        <div>
+                            <h3 class="text-lg font-medium text-gray-800">Estimated GFR</h3>
+                            <p class="text-sm text-gray-500">Using Cystatin C formula</p>
+                        </div>
+                        <div id="gfrValue" class="text-4xl font-bold text-blue-600">--</div>
+                    </div>
+
+                    <div class="bg-blue-50 rounded-lg p-4 mb-6">
+                        <div class="flex items-center">
+                            <div class="mr-3 text-blue-500">
+                                <i class="fas fa-info-circle text-xl"></i>
+                            </div>
+                            <div>
+                                <h4 class="font-medium text-blue-800">Interpretation</h4>
+                                <p id="interpretation" class="text-sm text-blue-700">Enter values to get interpretation</p>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="border-t border-gray-200 pt-4">
+                        <h4 class="text-sm font-medium text-gray-500 uppercase tracking-wider mb-3">Details</h4>
+                        <div class="grid grid-cols-1 md:grid-cols-3 gap-4 text-sm">
+                            <div class="bg-gray-50 p-3 rounded">
+                                <div class="text-gray-500">Cystatin C</div>
+                                <div id="detailCystatin" class="font-medium">-- mg/L</div>
+                            </div>
+                            <div class="bg-gray-50 p-3 rounded">
+                                <div class="text-gray-500">Age</div>
+                                <div id="detailAge" class="font-medium">-- years</div>
+                            </div>
+                            <div class="bg-gray-50 p-3 rounded">
+                                <div class="text-gray-500">Sex</div>
+                                <div id="detailSex" class="font-medium">--</div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="mt-8 bg-white rounded-xl shadow-md p-6">
+                <h3 class="text-lg font-medium text-gray-800 mb-4 flex items-center">
+                    <i class="fas fa-lightbulb mr-2 text-yellow-500"></i> About Cystatin C GFR
+                </h3>
+                <div class="prose prose-sm text-gray-600">
+                    <p>The Cystatin C-based GFR estimation is considered more accurate than creatinine-based methods, especially in patients with mild to moderate kidney disease.</p>
+                    <p class="mt-2">The formula used is based on the CKD-EPI equation:</p>
+                    <p class="bg-gray-100 p-3 rounded-md font-mono text-sm mt-2">
+                        GFR = 133 × min(SCys/0.8, 1)<sup>-0.499</sup> × max(SCys/0.8, 1)<sup>-1.328</sup> × 0.996<sup>Age</sup> × [1.012 if female] × [1.159 if Black]
+                    </p>
+                    <p class="mt-3 text-sm">Note: This calculator is for informational purposes only and should not replace professional medical advice.</p>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        document.getElementById('gfrForm').addEventListener('submit', function(e) {
+            e.preventDefault();
+            
+            // Get input values
+            const cystatin = parseFloat(document.getElementById('cystatin').value);
+            const age = parseInt(document.getElementById('age').value);
+            const sex = document.getElementById('sex').value;
+            const race = document.getElementById('race').value;
+            
+            // Validate inputs
+            if (isNaN(cystatin) || isNaN(age)) {
+                alert('Please enter valid values for all fields');
+                return;
+            }
+            
+            // Calculate GFR using CKD-EPI Cystatin C formula
+            let gfr = calculateCystatinGFR(cystatin, age, sex, race);
+            
+            // Display results
+            displayResults(cystatin, age, sex, race, gfr);
+            
+            // Show result container
+            document.getElementById('resultContainer').classList.remove('hidden');
+            
+            // Scroll to results
+            document.getElementById('resultContainer').scrollIntoView({ behavior: 'smooth' });
+        });
+        
+        function calculateCystatinGFR(cystatin, age, sex, race) {
+            // CKD-EPI Cystatin C equation (2012)
+            const k = (sex === 'female') ? 0.932 : 1;
+            const a = (race === 'black') ? 1.159 : 1;
+            
+            const term1 = Math.min(cystatin / 0.8, 1);
+            const term2 = Math.max(cystatin / 0.8, 1);
+            
+            let gfr = 133 * Math.pow(term1, -0.499) * Math.pow(term2, -1.328) 
+                      * Math.pow(0.996, age) * k * a;
+            
+            // Round to 1 decimal place
+            return Math.round(gfr * 10) / 10;
+        }
+        
+        function displayResults(cystatin, age, sex, race, gfr) {
+            // Update main GFR value
+            document.getElementById('gfrValue').textContent = gfr;
+            
+            // Update details
+            document.getElementById('detailCystatin').textContent = cystatin + ' mg/L';
+            document.getElementById('detailAge').textContent = age + ' years';
+            document.getElementById('detailSex').textContent = sex.charAt(0).toUpperCase() + sex.slice(1);
+            
+            // Set interpretation
+            let interpretation = '';
+            let colorClass = '';
+            
+            if (gfr >= 90) {
+                interpretation = 'Normal or high kidney function';
+                colorClass = 'text-green-600';
+            } else if (gfr >= 60) {
+                interpretation = 'Mildly decreased kidney function';
+                colorClass = 'text-blue-600';
+            } else if (gfr >= 30) {
+                interpretation = 'Moderately decreased kidney function';
+                colorClass = 'text-yellow-600';
+            } else if (gfr >= 15) {
+                interpretation = 'Severely decreased kidney function';
+                colorClass = 'text-orange-600';
+            } else {
+                interpretation = 'Kidney failure';
+                colorClass = 'text-red-600';
+            }
+            
+            const interpretationElement = document.getElementById('interpretation');
+            interpretationElement.textContent = interpretation;
+            interpretationElement.className = 'text-sm ' + colorClass;
+        }
+    </script>
+</body>
+</html>
